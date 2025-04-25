@@ -73,8 +73,11 @@ class PromptController {
 
 		return chatClient
 				.prompt()
+				//default system message
 				.system(sp -> sp.param("voice", voice))
 				.user(prompt)
+				// advisors to remember the conversation for interactions. We have used here InMemoryChatMemory but there are other options too. like RedisChatMemory, MongoChatMemory etc.
+				// For more info:: https://docs.spring.io/spring-ai/reference/api/chatclient.html#_advisors & https://docs.spring.io/spring-ai/reference/api/chatclient.html#_chat_memory
 				.advisors(a -> a
 						.advisors(advisor)
 						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, userId)
