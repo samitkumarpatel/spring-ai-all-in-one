@@ -4,27 +4,27 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.support.RestClientAdapter;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @SpringBootApplication
+@Slf4j
 public class SpringAiAllInOneApplication {
 
 	public static void main(String[] args) {
@@ -32,46 +32,35 @@ public class SpringAiAllInOneApplication {
 	}
 
 	@Bean
-	Map<String, PromptChatMemoryAdvisor> promptStore() {
-		return new ConcurrentHashMap<>();
-	}
-
-	@Bean
-	ChatClient chatClient(ChatClient.Builder builder, BookingTool bookingTool) {
-		return builder
-				.defaultSystem("""
-						You are a customer chat support agent of an airline named "Funnair". Respond in a friendly,
-						helpful, and joyful manner.
-
-						Before providing information about a booking or cancelling a booking, you MUST always
-						get the following information from the user: booking number, customer first name and last name.
-
-						Before changing a booking you MUST ensure it is permitted by the terms.
-
-						If there is a charge for the change, you MUST ask the user to consent before proceeding.
-						""")
-				.defaultAdvisors(
-						new MessageChatMemoryAdvisor(new InMemoryChatMemory()),
-						new SimpleLoggerAdvisor()
-				)
-				.defaultTools(bookingTool)
+	JsonPlaceHolderClient jsonPlaceHolderClient(RestClient.Builder restClientBuilder) {
+		var restClient= restClientBuilder
+				.baseUrl("https://jsonplaceholder.typicode.com")
+				.requestInterceptor((request, body, next) -> {
+					log.info("## {} {}", request.getMethod(), request.getURI().getPath());
+					return next.execute(request, body);
+				})
 				.build();
+		RestClientAdapter adapter = RestClientAdapter.create(restClient);
+		HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
+		return factory.createClient(JsonPlaceHolderClient.class);
 	}
 
 	@Bean
-	ChatClient calenderChatClient(ChatClient.Builder builder) {
-		return builder.build();
-	}
-
-	@Bean
-	ChatClient hrChatClient(ChatClient.Builder builder) {
+	ChatClient chatClient(ChatClient.Builder builder) {
 		return builder
 				.defaultSystem("""
-						You are a HR chat support agent of an IT company called "JSONPLACEHOLDER LLC". Respond in a friendly,
-						helpful, and joyful manner.
+					  You are an HR admin chat support agent for an IT company called "JSONPLACEHOLDER LLC".
+					  Always respond in a friendly, helpful, and joyful manner.
 
-						Before providing information about a employee get the following information from the user: employee id.
-						""")
+					  Your primary task is to provide information about users.
+
+					  Instructions:
+					  - Before sharing any user information, you must ask the user for user id.
+					  - If the user provides a valid user id, respond by sharing the user's information in JSON format.
+					  - If the user does not provide a user id, politely ask them to provide one.
+					  - If the user provides an invalid user id, inform them that it is invalid and kindly ask them to provide a valid user id.
+					  - If the user asks for any other information, politely inform them that you can only provide information about users.
+				""")
 				.build();
 	}
 }
@@ -81,117 +70,44 @@ public class SpringAiAllInOneApplication {
 @Slf4j
 class PromptController {
 	private final ChatClient chatClient;
-	private final ChatClient calenderChatClient;
-	private final ChatClient hrChatClient;
-	private final Map<String, PromptChatMemoryAdvisor> promptStore;
+	private final UserTool userTool;
 
-	@GetMapping("/{id}/booking-agent")
+	@GetMapping("/{id}/hr-agent")
 	@ResponseBody
-	public String getPromptResponse(@PathVariable String id, @RequestParam String prompt) {
-		log.info("##prompt: {}", prompt);
+	public String getHrResponse(@PathVariable String id, @RequestParam("prompt") String prompt) {
+		log.info("##hr-agent");
 		return chatClient
 				.prompt()
 				.user(prompt)
 				.advisors(advisorSpec -> advisorSpec
 						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, id)
 						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
-				.call()
-				.content();
-	}
-
-	@GetMapping("/{id}/calender-agent")
-	@ResponseBody
-	public String getDateTimeResponse(@PathVariable String id, @RequestParam("prompt") String prompt) {
-		log.info("##datetime-agent");
-		return calenderChatClient
-				.prompt()
-				.user(prompt)
-				.advisors(advisorSpec -> advisorSpec
-						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, id)
-						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
-				.tools(new DateTimeTools())
-				.call()
-				.content();
-	}
-
-	@GetMapping("/{id}/hr-agent")
-	@ResponseBody
-	public String getHrResponse(@PathVariable String id, @RequestParam("prompt") String prompt) {
-		log.info("##hr-agent");
-		return hrChatClient
-				.prompt()
-				.user(prompt)
-				.advisors(advisorSpec -> advisorSpec
-						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, id)
-						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
-				.tools(new HrRecordTool())
+				.tools(userTool)
 				.call()
 				.content();
 	}
 }
 
+record Geo(String lat, String lng) {}
+record Address(String street, String city, String suite, String zipcode, Geo geo) {}
+record Company(String name, String catchPhrase, String bs) {}
+record User(int id, String name, String username, String email, String phone, String website,
+			 Address address, Company company) {}
 
-class DateTimeTools {
+@HttpExchange(url = "/users", accept = MediaType.APPLICATION_JSON_VALUE)
+interface JsonPlaceHolderClient {
 
-	@Tool(description = "Get the current date and time in the user's timezone")
-	String getCurrentDateTime() {
-		return LocalDateTime.now().atZone(LocaleContextHolder.getTimeZone().toZoneId()).toString();
-	}
-
-	@Tool(description = "Get the tomorrow date and time in the user's timezone")
-	String getTomorrowDate() {
-		return LocalDateTime.now().plusDays(1).atZone(LocaleContextHolder.getTimeZone().toZoneId()).toString();
-	}
-
+	@GetExchange("/{id}")
+	User getUser(@PathVariable String id);
 }
 
 @Component
-@Slf4j
-class BookingTool {
+@RequiredArgsConstructor
+class UserTool {
+	private final JsonPlaceHolderClient jsonPlaceHolderClient;
 
-	@Tool(description = "Get booking details using booking number")
-	BookingDetails getBookingDetails(
-			@ToolParam(description = "booking number") String bookingNumber,
-			@ToolParam(description = "customer first name") String firstName,
-			@ToolParam(description = "customer last name") String lastName) {
-		log.info("##Get booking details: {}, {}, {}", bookingNumber, firstName, lastName);
-		return new BookingDetails("CONFIRMED", "Copenhagen", "New York", "2024-05-10");
-
-	}
-
-	@Tool(description = "Change a flight booking if allowed")
-	BookingChangeResponse changeBooking(@ToolParam(description = "booking number") String bookingNumber,
-										@ToolParam(description = "customer first name") String firstName,
-										@ToolParam(description = "customer last name") String lastName) {
-		log.info("##Change booking: {}, {}, {}", bookingNumber, firstName, lastName);
-		return new BookingChangeResponse("SUCCESS", "Flight changed to 2024-05-12");
-	}
-
-	@Tool(description = "Cancel an existing flight booking")
-	CancelResponse cancelBooking(@ToolParam(description = "booking number") String bookingNumber,
-								 @ToolParam(description = "customer first name") String firstName,
-								 @ToolParam(description = "customer last name") String lastName) {
-		return new CancelResponse("CANCELLED", "Your flight has been cancelled.");
-	}
-
-}
-
-record BookingDetails(String status, String from, String to, String date) {}
-record BookingChangeResponse(String status, String message) {}
-record CancelResponse(String status, String message) {}
-
-class HrRecordTool {
-	@Tool(description = "Get employee details using employee id")
-	EmployeeDetails getEmployeeDetails(@ToolParam(description = "employee id") String employeeId){
-		return new EmployeeDetails(
-				"Samit",
-				"Software Engineer",
-				"IT",
-				LocalDate.of(2022, 1, 1),
-				"New York",
-				"skp@jsonplaceholder.net",
-				"+1 222 12122"
-		);
+	@Tool(description = "Get user details by user id", name = "getUser")
+	public User getUser(@ToolParam(description = "user id") String id) {
+		return jsonPlaceHolderClient.getUser(id);
 	}
 }
-record EmployeeDetails(String name, String position, String department, LocalDate joiningDate, String location, String email, String phoneNumber) {}
