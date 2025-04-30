@@ -71,7 +71,7 @@ public class SpringAiAllInOneApplication {
 class PromptController {
 	private final ChatClient chatClient;
 	private final UserTool userTool;
-
+	//http :8080/1/hr-agent prompt=="get me details for user id 1"
 	@GetMapping("/{id}/hr-agent")
 	@ResponseBody
 	public String getHrResponse(@PathVariable String id, @RequestParam("prompt") String prompt) {

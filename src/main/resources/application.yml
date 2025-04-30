@@ -6,7 +6,8 @@ spring:
     ollama:
       #base-url:
       chat:
-        model: mistral
+        #model: mistral
+        model: llama3.1
 
 management:
   endpoints:
