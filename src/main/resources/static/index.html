@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Chat Bot</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                background-color: #f4f4f4;
+            }
+            #chat-container {
+                width: 90%; /* Increased from 50% */
+                max-width: 800px; /* Increased from 600px */
+                background: #fff;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                padding: 10px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .message {
+                display: flex;
+                margin: 5px 0;
+            }
+            .message.user {
+                justify-content: flex-end;
+            }
+            .message.bot {
+                justify-content: flex-start;
+            }
+            .message span {
+                padding: 10px;
+                border-radius: 5px;
+                max-width: 70%;
+            }
+            .message.user span {
+                background-color: #d1e7dd;
+                color: #0f5132;
+            }
+            .message.bot span {
+                background-color: #f8d7da;
+                color: #842029;
+            }
+            #input-container {
+                display: flex;
+                gap: 10px;
+            }
+            #input-container input {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+            #input-container button {
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            #input-container button:hover {
+                background-color: #0056b3;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div id="chat-container">
+                <div id="chat-display">
+                    <div v-for="message in messages" :key="message.id" :class="['message', message.type]">
+                        <span>{{ message.text }}</span>
+                    </div>
+                </div>
+                <div id="input-container">
+                    <input type="text" v-model="userInput" placeholder="Type your message here..." @keypress.enter="sendMessage" />
+                    <button @click="sendMessage">Send</button>
+                </div>
+            </div>
+        </div>
+        <script>
+            const app = Vue.createApp({
+                data() {
+                    return {
+                        messages: [],
+                        userInput: '',
+                        ws: null,
+                    };
+                },
+                mounted() {
+                    this.ws = new WebSocket('ws://localhost:8080/ws/bot');
+                    this.ws.onmessage = (event) => {
+                        const lastMessage = this.messages[this.messages.length - 1];
+                        if (lastMessage && lastMessage.type === 'bot') {
+                            lastMessage.text += ` ${event.data}`; // Append to the last bot message
+                        } else {
+                            this.messages.push({ id: Date.now(), text: event.data, type: 'bot' });
+                        }
+                    };
+                },
+                methods: {
+                    sendMessage() {
+                        const message = this.userInput.trim();
+                        if (message) {
+                            this.messages.push({ id: Date.now(), text: message, type: 'user' });
+                            this.ws.send(message);
+                            this.userInput = '';
+                        }
+                    },
+                },
+            });
+
+            app.mount('#app');
+        </script>
+    </body>
+</html>
