@@ -88,12 +88,12 @@ class BotWebSocketHandler implements WebSocketHandler {
 	@Override
 	public Mono<Void> handle(WebSocketSession session) {
 		var chatMemory = promptStorage.computeIfAbsent(session.getId(), k -> new PromptChatMemoryAdvisor(new InMemoryChatMemory()));
-		//echo the message back to the client
+
 		return session.send(
 				session.receive()
 						.map(WebSocketMessage::getPayloadAsText)
 						.flatMap(message -> {
-							log.info("##websocket##");
+							log.info("##websocket## id = {} , message = {}", session.getId(), message);
 							return chatClient
 									.prompt()
 									.user(message)
@@ -105,7 +105,7 @@ class BotWebSocketHandler implements WebSocketHandler {
 									.content()
 									.map(session::textMessage);
 						})
-						.delayElements(Duration.ofMillis(100))
+						//.delayElements(Duration.ofMillis(100))
 		);
 
 	}

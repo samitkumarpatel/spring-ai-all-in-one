@@ -45,6 +45,7 @@
                 display: flex;
                 align-items: center;
                 gap: 5px;
+                word-wrap: break-word;
             }
             .message.user span {
                 background-color: #d1e7dd;
@@ -57,6 +58,7 @@
             .message.bot span {
                 background-color: #f8d7da;
                 color: #842029;
+                white-space: pre-wrap; /* Ensure Markdown formatting is preserved */
             }
             .message.bot span::before {
                 content: '🤖'; /* Bot icon */
@@ -87,6 +89,7 @@
     </head>
     <body>
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         <div id="app">
             <div id="chat-container">
                 <div id="chat-display">
@@ -101,40 +104,42 @@
             </div>
         </div>
         <script>
-            const { createApp, ref, onMounted } = Vue
+            const { createApp, ref, onMounted } = Vue;
 
             createApp({
                 setup() {
-                    const messages = ref([])
-                    const userInput = ref('')
-                    const ws = ref(null)
+                    const messages = ref([]);
+                    const userInput = ref('');
+                    const ws = ref(null);
 
                     onMounted(() => {
-                        ws.value = new WebSocket('ws://localhost:8080/ws/bot')
+                        ws.value = new WebSocket('ws://localhost:8080/ws/bot');
                         ws.value.onmessage = (event) => {
-                            const lastMessage = messages.value[messages.value.length - 1]
+                            const lastMessage = messages.value[messages.value.length - 1];
                             if (lastMessage && lastMessage.type === 'bot') {
-                                lastMessage.text += ` ${event.data}` // Append to the last bot message
+                                lastMessage.text += ` ${marked.parseInline(event.data)}`; // Append parsed Markdown
                             } else {
-                                messages.value.push({ id: Date.now(), text: event.data, type: 'bot' })
+                                messages.value.push({ id: Date.now(), text: marked.parseInline(event.data), type: 'bot' });
                             }
-                        }
-                    })
+                        };
+                    });
+
                     const sendMessage = () => {
-                        const message = userInput.value.trim()
+                        const message = userInput.value.trim();
                         if (message) {
-                            messages.value.push({ id: Date.now(), text: message, type: 'user' })
-                            ws.value.send(message)
-                            userInput.value = ''
+                            messages.value.push({ id: Date.now(), text: message, type: 'user' });
+                            ws.value.send(message);
+                            userInput.value = '';
                         }
-                    }
+                    };
+
                     return {
                         messages,
                         userInput,
-                        sendMessage
-                    }
-                }
-            }).mount('#app')
+                        sendMessage,
+                    };
+                },
+            }).mount('#app');
         </script>
     </body>
 </html>
