@@ -4,7 +4,6 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Chat Bot</title>
-        <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -76,6 +75,7 @@
         </style>
     </head>
     <body>
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
         <div id="app">
             <div id="chat-container">
                 <div id="chat-display">
@@ -90,38 +90,40 @@
             </div>
         </div>
         <script>
-            const app = Vue.createApp({
-                data() {
-                    return {
-                        messages: [],
-                        userInput: '',
-                        ws: null,
-                    };
-                },
-                mounted() {
-                    this.ws = new WebSocket('ws://localhost:8080/ws/bot');
-                    this.ws.onmessage = (event) => {
-                        const lastMessage = this.messages[this.messages.length - 1];
-                        if (lastMessage && lastMessage.type === 'bot') {
-                            lastMessage.text += ` ${event.data}`; // Append to the last bot message
-                        } else {
-                            this.messages.push({ id: Date.now(), text: event.data, type: 'bot' });
-                        }
-                    };
-                },
-                methods: {
-                    sendMessage() {
-                        const message = this.userInput.trim();
-                        if (message) {
-                            this.messages.push({ id: Date.now(), text: message, type: 'user' });
-                            this.ws.send(message);
-                            this.userInput = '';
-                        }
-                    },
-                },
-            });
+            const { createApp, ref, onMounted } = Vue
 
-            app.mount('#app');
+            createApp({
+                setup() {
+                    const messages = ref([])
+                    const userInput = ref('')
+                    const ws = ref(null)
+
+                    onMounted(() => {
+                        ws.value = new WebSocket('ws://localhost:8080/ws/bot')
+                        ws.value.onmessage = (event) => {
+                            const lastMessage = messages.value[messages.value.length - 1]
+                            if (lastMessage && lastMessage.type === 'bot') {
+                                lastMessage.text += ` ${event.data}` // Append to the last bot message
+                            } else {
+                                messages.value.push({ id: Date.now(), text: event.data, type: 'bot' })
+                            }
+                        }
+                    })
+                    const sendMessage = () => {
+                        const message = userInput.value.trim()
+                        if (message) {
+                            messages.value.push({ id: Date.now(), text: message, type: 'user' })
+                            ws.value.send(message)
+                            userInput.value = ''
+                        }
+                    }
+                    return {
+                        messages,
+                        userInput,
+                        sendMessage
+                    }
+                }
+            }).mount('#app')
         </script>
     </body>
 </html>
