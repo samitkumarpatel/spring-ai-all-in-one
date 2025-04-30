@@ -42,14 +42,25 @@
                 padding: 10px;
                 border-radius: 5px;
                 max-width: 70%;
+                display: flex;
+                align-items: center;
+                gap: 5px;
             }
             .message.user span {
                 background-color: #d1e7dd;
                 color: #0f5132;
             }
+            .message.user span::before {
+                content: '👤'; /* User icon */
+                font-size: 1.2em;
+            }
             .message.bot span {
                 background-color: #f8d7da;
                 color: #842029;
+            }
+            .message.bot span::before {
+                content: '🤖'; /* Bot icon */
+                font-size: 1.2em;
             }
             #input-container {
                 display: flex;
