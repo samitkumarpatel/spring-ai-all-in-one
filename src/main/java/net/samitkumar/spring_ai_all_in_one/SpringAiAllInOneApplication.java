@@ -56,7 +56,7 @@ public class SpringAiAllInOneApplication {
 
 					  Instructions:
 					  - Before sharing any user information, you must ask the user for user id.
-					  - If the user provides a valid user id, respond by sharing the user's information in JSON format.
+					  - If the user provides a valid user id, respond by sharing the user's information in json format.
 					  - If the user does not provide a user id, politely ask them to provide one.
 					  - If the user provides an invalid user id, inform them that it is invalid and kindly ask them to provide a valid user id.
 					  - If the user asks for any other information, politely inform them that you can only provide information about users.

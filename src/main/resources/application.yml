@@ -3,8 +3,13 @@ spring:
   application:
     name: spring-ai-all-in-one
   ai:
-    openai:
-      api-key: ${API_KEY:fake}
+    azure:
+      openai:
+        api-key: ${API_KEY:fake}
+        endpoint: ${ENDPOINT:fake}
+        chat:
+          options:
+            deployment-name: gpt-4o-mini
 
 
 management:
