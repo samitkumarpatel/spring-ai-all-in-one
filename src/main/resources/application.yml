@@ -3,11 +3,9 @@ spring:
   application:
     name: spring-ai-all-in-one
   ai:
-    ollama:
-      #base-url:
-      chat:
-        #model: mistral
-        model: llama3.1
+    openai:
+      api-key: ${API_KEY:fake}
+
 
 management:
   endpoints:
