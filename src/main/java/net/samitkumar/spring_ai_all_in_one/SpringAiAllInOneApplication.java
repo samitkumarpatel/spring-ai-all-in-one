@@ -50,6 +50,7 @@ class PromptController {
 	private final ChatClient chatClient;
 	private final Map<String, PromptChatMemoryAdvisor> chatMemoryStorage;
 
+	//http :8080/ai prompt=="hi"
 	@GetMapping("/ai")
 	@ResponseBody
 	public String getPromptResponse(@RequestParam String prompt) {
@@ -61,6 +62,7 @@ class PromptController {
 				.content();
 	}
 
+	//http :8080/ai/stream prompt=="hi"
 	@GetMapping(value = "/ai/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Flux<String> getPromptResponseInStream(@RequestParam String prompt) {
@@ -71,6 +73,7 @@ class PromptController {
 				.stream()
 				.content();
 	}
+
 
 	@GetMapping("{userId}/ai")
 	@ResponseBody
