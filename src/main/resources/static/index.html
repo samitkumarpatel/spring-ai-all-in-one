@@ -1,145 +1,152 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Chat Bot</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 100vh;
-                background-color: #f4f4f4;
-            }
-            #chat-container {
-                width: 90%; /* Increased from 50% */
-                max-width: 800px; /* Increased from 600px */
-                background: #fff;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                padding: 10px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            .message {
-                display: flex;
-                margin: 5px 0;
-            }
-            .message.user {
-                justify-content: flex-end;
-            }
-            .message.bot {
-                justify-content: flex-start;
-            }
-            .message span {
-                padding: 10px;
-                border-radius: 5px;
-                max-width: 70%;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-                word-wrap: break-word;
-            }
-            .message.user span {
-                background-color: #d1e7dd;
-                color: #0f5132;
-            }
-            .message.user span::before {
-                content: '👤'; /* User icon */
-                font-size: 1.2em;
-            }
-            .message.bot span {
-                background-color: #f8d7da;
-                color: #842029;
-                white-space: pre-wrap; /* Ensure Markdown formatting is preserved */
-            }
-            .message.bot span::before {
-                content: '🤖'; /* Bot icon */
-                font-size: 1.2em;
-            }
-            #input-container {
-                display: flex;
-                gap: 10px;
-            }
-            #input-container input {
-                flex: 1;
-                padding: 10px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-            }
-            #input-container button {
-                padding: 10px 20px;
-                background-color: #007bff;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-            }
-            #input-container button:hover {
-                background-color: #0056b3;
-            }
-        </style>
-    </head>
-    <body>
-        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-        <div id="app">
-            <div id="chat-container">
-                <div id="chat-display">
-                    <div v-for="message in messages" :key="message.id" :class="['message', message.type]">
-                        <span>{{ message.text }}</span>
-                    </div>
-                </div>
-                <div id="input-container">
-                    <input type="text" v-model="userInput" placeholder="Type your message here..." @keypress.enter="sendMessage" />
-                    <button @click="sendMessage">Send</button>
-                </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MyFinance Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        #chat-container {
+            width: 90%; /* Increased from 50% */
+            max-width: 800px; /* Increased from 600px */
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #chat-display {
+            flex: 1;
+            overflow-y: auto; /* Enable vertical scrolling */
+            max-height: 400px; /* Optional: Limit the height of the chat window */
+        }
+        .message {
+            display: flex;
+            margin: 5px 0;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message.bot {
+            justify-content: flex-start;
+        }
+        .message span {
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 70%;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            word-wrap: break-word;
+        }
+        .message.user span {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .message.user span::before {
+            content: '👤'; /* User icon */
+            font-size: 1.2em;
+        }
+        .message.bot span {
+            background-color: #f8d7da;
+            color: #842029;
+            white-space: pre-wrap; /* Ensure Markdown formatting is preserved */
+        }
+        .message.bot span::before {
+            content: '🤖'; /* Bot icon */
+            font-size: 1.2em;
+        }
+        #input-container {
+            display: flex;
+            gap: 10px;
+        }
+        #input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #input-container button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #input-container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<div id="app">
+    <div id="chat-container">
+        <div id="chat-display">
+            <div v-for="message in messages" :key="message.id" :class="['message', message.type]">
+                <span>{{ message.text }}</span>
             </div>
         </div>
-        <script>
-            const { createApp, ref, onMounted } = Vue;
+        <div id="input-container">
+            <input type="text" v-model="userInput" placeholder="Type your message here..." @keypress.enter="sendMessage" />
+            <button @click="sendMessage">Send</button>
+        </div>
+    </div>
+</div>
+<script>
+    const { createApp, ref, onMounted } = Vue;
 
-            createApp({
-                setup() {
-                    const messages = ref([]);
-                    const userInput = ref('');
-                    const ws = ref(null);
+    createApp({
+        setup() {
+            const messages = ref([]);
+            const userInput = ref('');
+            const ws = ref(null);
 
-                    onMounted(() => {
-                        ws.value = new WebSocket('ws://localhost:8080/ws/bot');
-                        ws.value.onmessage = (event) => {
-                            const lastMessage = messages.value[messages.value.length - 1];
-                            if (lastMessage && lastMessage.type === 'bot') {
-                                lastMessage.text += ` ${marked.parseInline(event.data)}`; // Append parsed Markdown
-                            } else {
-                                messages.value.push({ id: Date.now(), text: marked.parseInline(event.data), type: 'bot' });
-                            }
-                        };
-                    });
+            onMounted(() => {
+                const currentHost = window.location.host;
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                ws.value = new WebSocket(`${protocol}://${currentHost}/ws/bot`);
+                ws.value.onmessage = (event) => {
+                    const lastMessage = messages.value[messages.value.length - 1];
+                    if (lastMessage && lastMessage.type === 'bot') {
+                        lastMessage.text += `${event.data}`; // Append parsed Markdown
+                    } else {
+                        messages.value.push({ id: Date.now(), text: event.data, type: 'bot' });
+                    }
+                };
+            });
 
-                    const sendMessage = () => {
-                        const message = userInput.value.trim();
-                        if (message) {
-                            messages.value.push({ id: Date.now(), text: message, type: 'user' });
-                            ws.value.send(message);
-                            userInput.value = '';
-                        }
-                    };
+            const sendMessage = () => {
+                const message = userInput.value.trim();
+                if (message) {
+                    messages.value.push({ id: Date.now(), text: message, type: 'user' });
+                    ws.value.send(message);
+                    userInput.value = '';
+                }
+            };
 
-                    return {
-                        messages,
-                        userInput,
-                        sendMessage,
-                    };
-                },
-            }).mount('#app');
-        </script>
-    </body>
+            return {
+                messages,
+                userInput,
+                sendMessage,
+            };
+        },
+    }).mount('#app');
+</script>
+</body>
 </html>
