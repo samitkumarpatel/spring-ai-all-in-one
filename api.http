@@ -1,0 +1,4 @@
+@HOST=http://localhost:8080
+
+###
+GET {{HOST}}/1/hr-agent?prompt=get me details for user id 1
