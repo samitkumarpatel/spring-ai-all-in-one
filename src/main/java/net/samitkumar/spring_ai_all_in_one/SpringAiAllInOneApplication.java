@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.boot.SpringApplication;
@@ -21,6 +23,10 @@ import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 @SpringBootApplication
@@ -56,12 +62,17 @@ public class SpringAiAllInOneApplication {
 
 					  Instructions:
 					  - Before sharing any user information, you must ask the user for user id.
-					  - If the user provides a valid user id, respond by sharing the user's information in JSON format.
+					  - If the user provides a valid user id, respond by sharing the user's information.
 					  - If the user does not provide a user id, politely ask them to provide one.
 					  - If the user provides an invalid user id, inform them that it is invalid and kindly ask them to provide a valid user id.
 					  - If the user asks for any other information, politely inform them that you can only provide information about users.
 				""")
 				.build();
+	}
+
+	@Bean
+	Map<String, PromptChatMemoryAdvisor> promptChatMemoryRepository() {
+		return new ConcurrentHashMap<>();
 	}
 }
 
@@ -71,15 +82,19 @@ public class SpringAiAllInOneApplication {
 class PromptController {
 	private final ChatClient chatClient;
 	private final UserTool userTool;
+	private final Map<String, PromptChatMemoryAdvisor> promptChatMemoryRepository;
+
 	//http :8080/1/hr-agent prompt=="get me details for user id 1"
 	@GetMapping("/{id}/hr-agent")
 	@ResponseBody
 	public String getHrResponse(@PathVariable String id, @RequestParam("prompt") String prompt) {
-		log.info("##hr-agent");
+		log.info("##hr-agent, prompt:: {}", prompt);
+		var chatMemoryAdvisor = promptChatMemoryRepository.computeIfAbsent(id , k -> new PromptChatMemoryAdvisor(new InMemoryChatMemory()));
 		return chatClient
 				.prompt()
 				.user(prompt)
 				.advisors(advisorSpec -> advisorSpec
+						.advisors(chatMemoryAdvisor)
 						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, id)
 						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
 				.tools(userTool)
