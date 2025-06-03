@@ -3,11 +3,11 @@ package net.samitkumar.spring_ai_all_in_one;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +24,6 @@ import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,6 +34,12 @@ public class SpringAiAllInOneApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(SpringAiAllInOneApplication.class, args);
+	}
+
+	@Bean
+	VectorStore vectorStore(EmbeddingModel embeddingModel) {
+		return null;
+
 	}
 
 	@Bean
@@ -94,9 +99,7 @@ class PromptController {
 				.prompt()
 				.user(prompt)
 				.advisors(advisorSpec -> advisorSpec
-						.advisors(chatMemoryAdvisor)
-						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, id)
-						.param(AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
+						.advisors(chatMemoryAdvisor))
 				.tools(userTool)
 				.call()
 				.content();
