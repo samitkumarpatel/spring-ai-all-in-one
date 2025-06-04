@@ -1,6 +1,8 @@
 # spring-ai
 
-[Reference](https://docs.spring.io/spring-ai/reference/)
+- [Reference Example](https://spring.io/blog/2025/05/20/your-first-spring-ai-1)
+
+- [Reference](https://docs.spring.io/spring-ai/reference/)
 
 Spring AI is a framework (in spring eco system) designed to integrate artificial intelligence capabilities into Java applications, particularly those built with the Spring ecosystem. Here are some key points about Spring AI and its purpose:
 
