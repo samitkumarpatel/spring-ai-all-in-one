@@ -8,6 +8,8 @@ spring:
       chat:
         #model: mistral
         model: llama3.1
+      embedding:
+        model: llama3.1
 
 management:
   endpoints:

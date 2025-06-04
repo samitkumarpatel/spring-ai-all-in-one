@@ -1,16 +1,26 @@
 package net.samitkumar.spring_ai_all_in_one;
 
-import lombok.RequiredArgsConstructor;
+import com.poiji.annotation.ExcelCellName;
+import com.poiji.bind.Poiji;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
-import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.ollama.OllamaEmbeddingModel;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
@@ -37,9 +47,27 @@ public class SpringAiAllInOneApplication {
 	}
 
 	@Bean
-	VectorStore vectorStore(EmbeddingModel embeddingModel) {
-		return null;
+	CommandLineRunner commandLineRunner(VectorStore vectorStore, @Value("classpath:about/jsonplaceholder_user_details.xlsx") Resource resource) {
+		return args -> {
+			log.info("## Loading data from resource: {}", resource.getFilename());
+			var excelData = Poiji.fromExcel(resource.getFile(), ExcelData.class);
+			log.info("## Loaded {} records from the Excel file", excelData.size());
+			log.info("## Records are from Excel file {}", excelData);
+			vectorStore.add(
+					excelData
+							.stream()
+							.map(d -> Document.builder()
+									.id(d.getId())
+									//.metadata("username", d.getUsername())
+									//.metadata("photo", d.getPhoto())
+									.text("id=%s,username=%s,about=%s".formatted(d.getId(), d.getUsername(),d.getAbout())).build())
+							.toList());
+		};
+	}
 
+	@Bean
+	VectorStore vectorStore(OllamaEmbeddingModel ollamaEmbeddingModel) {
+		return SimpleVectorStore.builder(ollamaEmbeddingModel).build();
 	}
 
 	@Bean
@@ -81,6 +109,19 @@ public class SpringAiAllInOneApplication {
 	}
 }
 
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Setter
+@Getter
+class ExcelData {
+	@ExcelCellName("id") String id;
+	@ExcelCellName("username") String username;
+	@ExcelCellName("photo") String photo;
+	@ExcelCellName("about") String about;
+}
+
 @RequiredArgsConstructor
 @Controller
 @Slf4j
@@ -88,17 +129,22 @@ class PromptController {
 	private final ChatClient chatClient;
 	private final UserTool userTool;
 	private final Map<String, PromptChatMemoryAdvisor> promptChatMemoryRepository;
+	private final VectorStore vectorStore;
 
 	//http :8080/1/hr-agent prompt=="get me details for user id 1"
 	@GetMapping("/{id}/hr-agent")
 	@ResponseBody
 	public String getHrResponse(@PathVariable String id, @RequestParam("prompt") String prompt) {
 		log.info("##hr-agent, prompt:: {}", prompt);
-		var chatMemoryAdvisor = promptChatMemoryRepository.computeIfAbsent(id , k -> new PromptChatMemoryAdvisor(new InMemoryChatMemory()));
+		var chatMemoryAdvisor = promptChatMemoryRepository.computeIfAbsent(id , k -> PromptChatMemoryAdvisor
+				.builder(MessageWindowChatMemory.builder().maxMessages(10).build())
+				.build());
+
 		return chatClient
 				.prompt()
 				.user(prompt)
 				.advisors(advisorSpec -> advisorSpec
+						//.advisors(new QuestionAnswerAdvisor(vectorStore))
 						.advisors(chatMemoryAdvisor))
 				.tools(userTool)
 				.call()
