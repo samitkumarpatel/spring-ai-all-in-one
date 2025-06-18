@@ -32,3 +32,9 @@ docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
 docker exec -it ollama ollama run llama3
 
 ```
+Example can be found 
+
+- [https://github.com/samitkumarpatel-work/spring-ai-chat-agent](https://github.com/samitkumarpatel-work/spring-ai-chat-agent)
+- [https://github.com/samitkumarpatel-work/spring-ai-mcp-server](https://github.com/samitkumarpatel-work/spring-ai-mcp-server)
+- [https://github.com/samitkumarpatel-work/spring-ai-chat-agent/tree/mcp-client](https://github.com/samitkumarpatel-work/spring-ai-chat-agent/tree/mcp-client)
+- [https://github.com/samitkumarpatel-work/spring-ai-mcp-stdio-consumer](https://github.com/samitkumarpatel-work/spring-ai-mcp-stdio-consumer)
