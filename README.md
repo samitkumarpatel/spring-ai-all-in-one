@@ -38,3 +38,4 @@ Example can be found
 - [https://github.com/samitkumarpatel-work/spring-ai-mcp-server](https://github.com/samitkumarpatel-work/spring-ai-mcp-server)
 - [https://github.com/samitkumarpatel-work/spring-ai-chat-agent/tree/mcp-client](https://github.com/samitkumarpatel-work/spring-ai-chat-agent/tree/mcp-client)
 - [https://github.com/samitkumarpatel-work/spring-ai-mcp-stdio-consumer](https://github.com/samitkumarpatel-work/spring-ai-mcp-stdio-consumer)
+- [https://github.com/samitkumarpatel-work/google-adk](https://github.com/samitkumarpatel-work/google-adk)
